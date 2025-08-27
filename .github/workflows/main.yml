@@ -1,0 +1,37 @@
+name: EC2 Manager Automation
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  ec2-manager:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck jq awscli
+
+      - name: Lint Shell Script
+        run: shellcheck ec2_manager.sh
+
+      - name: Configure AWS CLI
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region us-east-1
+
+      - name: Test Describe Operation
+        run: |
+          chmod +x ec2_manager.sh
+          ./ec2_manager.sh <<EOF
+3
+${{ secrets.TEST_INSTANCE_ID }}
+4
+EOF
