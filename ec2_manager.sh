@@ -5,15 +5,13 @@
 # ==============================
 set -euo pipefail
 
-# Function: Check AWS CLI configuration
 check_aws_config() {
   if ! aws sts get-caller-identity &>/dev/null; then
-    echo "AWS CLI is not configured properly. Please run 'aws configure' or set environment variables."
+    echo
     exit 1
   fi
 }
 
-# Function: Start instance
 start_instance() {
   local instance_id=$1
   echo "Starting instance: $instance_id ..."
@@ -21,7 +19,6 @@ start_instance() {
   echo "Instance $instance_id started."
 }
 
-# Function: Stop instance
 stop_instance() {
   local instance_id=$1
   echo "Stopping instance: $instance_id ..."
@@ -29,18 +26,14 @@ stop_instance() {
   echo "Instance $instance_id stopped."
 }
 
-# Function: Describe instance
 describe_instance() {
   local instance_id=$1
   echo "Details for instance: $instance_id ..."
   aws ec2 describe-instances --instance-ids "$instance_id" \
-    --query 'Reservations[0].Instances[0] | {InstanceId: InstanceId, State: State.Name, PublicIp: PublicIpAddress}' \
-    --output table
+    --query '
+    --output '
 }
 
-# ==============================
-# Non-interactive (CLI mode)
-# ==============================
 if [[ $# -ge 2 ]]; then
   check_aws_config
   command=$1
@@ -57,17 +50,14 @@ if [[ $# -ge 2 ]]; then
       describe_instance "$instance_id"
       ;;
     *)
-      echo "Unknown command: $command"
-      echo "Usage: $0 {start|stop|describe} <instance-id>"
+      echo "$command"
+      echo "Usage: $0 
       exit 1
       ;;
   esac
   exit 0
 fi
 
-# ==============================
-# Interactive Menu (default)
-# ==============================
 main_menu() {
   check_aws_config
 
@@ -77,7 +67,7 @@ main_menu() {
     echo "2. Stop Instance"
     echo "3. Describe Instance"
     echo "4. Exit"
-    read -rp "Choose an option [1-4]: " choice
+    read -rp " choice
 
     case $choice in
       1)
