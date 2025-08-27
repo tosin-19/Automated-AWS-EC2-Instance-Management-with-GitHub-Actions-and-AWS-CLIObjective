@@ -13,9 +13,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
+      - name: Install AWS CLI v2
         run: |
-          - name: Install AWS CLI v2 
             if ! command -v aws &> /dev/null
             then
             sudo apt-get update
