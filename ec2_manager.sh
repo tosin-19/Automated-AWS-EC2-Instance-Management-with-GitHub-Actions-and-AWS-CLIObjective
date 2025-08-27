@@ -3,11 +3,6 @@
 # ==============================
 # EC2 Manager Script
 # ==============================
-# Requirements:
-# - AWS CLI installed and configured
-# - jq installed for JSON parsing
-# ==============================
-
 set -euo pipefail
 
 # Function: Check AWS CLI configuration
@@ -21,41 +16,58 @@ check_aws_config() {
 # Function: Start instance
 start_instance() {
   local instance_id=$1
-  echo "🔄 Starting instance: $instance_id ..."
-  if aws ec2 start-instances --instance-ids "$instance_id" >/dev/null 2>&1; then
-    aws ec2 describe-instances --instance-ids "$instance_id" \
-      --query 'Reservations[0].Instances[0].State.Name' --output text
-    echo "Instance $instance_id started successfully."
-  else
-    echo "Failed to start instance $instance_id. Check instance ID or state."
-  fi
+  echo "Starting instance: $instance_id ..."
+  aws ec2 start-instances --instance-ids "$instance_id" >/dev/null
+  echo "Instance $instance_id started."
 }
 
 # Function: Stop instance
 stop_instance() {
   local instance_id=$1
-  echo "🔄 Stopping instance: $instance_id ..."
-  if aws ec2 stop-instances --instance-ids "$instance_id" >/dev/null 2>&1; then
-    aws ec2 describe-instances --instance-ids "$instance_id" \
-      --query 'Reservations[0].Instances[0].State.Name' --output text
-    echo "Instance $instance_id stopped successfully."
-  else
-    echo "Failed to stop instance $instance_id. Check instance ID or state."
-  fi
+  echo "Stopping instance: $instance_id ..."
+  aws ec2 stop-instances --instance-ids "$instance_id" >/dev/null
+  echo "Instance $instance_id stopped."
 }
 
 # Function: Describe instance
 describe_instance() {
   local instance_id=$1
-  echo "Retrieving details for instance: $instance_id ..."
-  if ! aws ec2 describe-instances --instance-ids "$instance_id" >/tmp/instance.json 2>/dev/null; then
-    echo "Invalid instance ID: $instance_id"
-    return
-  fi
-  jq '.Reservations[0].Instances[0] | {InstanceId, InstanceType, State: .State.Name, PublicIp: .PublicIpAddress}' /tmp/instance.json
+  echo "Details for instance: $instance_id ..."
+  aws ec2 describe-instances --instance-ids "$instance_id" \
+    --query 'Reservations[0].Instances[0] | {InstanceId: InstanceId, State: State.Name, PublicIp: PublicIpAddress}' \
+    --output table
 }
 
-# Menu Loop
+# ==============================
+# Non-interactive (CLI mode)
+# ==============================
+if [[ $# -ge 2 ]]; then
+  check_aws_config
+  command=$1
+  instance_id=$2
+
+  case $command in
+    start)
+      start_instance "$instance_id"
+      ;;
+    stop)
+      stop_instance "$instance_id"
+      ;;
+    describe)
+      describe_instance "$instance_id"
+      ;;
+    *)
+      echo "Unknown command: $command"
+      echo "Usage: $0 {start|stop|describe} <instance-id>"
+      exit 1
+      ;;
+  esac
+  exit 0
+fi
+
+# ==============================
+# Interactive Menu (default)
+# ==============================
 main_menu() {
   check_aws_config
 
@@ -70,17 +82,14 @@ main_menu() {
     case $choice in
       1)
         read -rp "Enter Instance ID: " instance_id
-        [ -z "$instance_id" ] && echo "Instance ID cannot be empty!" && continue
         start_instance "$instance_id"
         ;;
       2)
         read -rp "Enter Instance ID: " instance_id
-        [ -z "$instance_id" ] && echo "Instance ID cannot be empty!" && continue
         stop_instance "$instance_id"
         ;;
       3)
         read -rp "Enter Instance ID: " instance_id
-        [ -z "$instance_id" ] && echo "Instance ID cannot be empty!" && continue
         describe_instance "$instance_id"
         ;;
       4)
@@ -94,5 +103,4 @@ main_menu() {
   done
 }
 
-#Correct entrypoint
-main_menu "$@"
+main_menu
