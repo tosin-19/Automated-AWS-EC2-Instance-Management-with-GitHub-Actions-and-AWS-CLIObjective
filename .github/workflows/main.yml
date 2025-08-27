@@ -1,47 +1,38 @@
-name: EC2 Manager Automation
+name: EC2 Manager
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:   
 
 jobs:
   ec2-manager:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install AWS CLI v2
+      - name: Set up AWS CLI v2
         run: |
-            if ! command -v aws &> /dev/null
-            then
-            sudo apt-get update
-            sudo apt-get install -y unzip curl
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-            else
-            echo "AWS CLI already installed"
-            fi
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install --update
 
-      - name: Lint Shell Script
-        run: shellcheck ec2_manager.sh
-
-      - name: Configure AWS CLI
+      - name: Configure AWS credentials
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: eu-north-1   # change if needed
         run: |
-          aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
-          aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
-          aws configure set default.region us-east-1
+          aws sts get-caller-identity
 
-      - name: Test Describe Operation
-        env:
-          TEST_INSTANCE_ID: ${{ secrets.TEST_INSTANCE_ID }}
-        run: |
-          chmod +x ec2_manager.sh
-          ./ec2_manager.sh <<EOF
-          EOF
+      - name: Make script executable
+        run: chmod +x ec2_manager.sh
+
+      - name: Start EC2 Instance
+        run: ./ec2_manager.sh start ${{ secrets.TEST_INSTANCE_ID }}
+
+      - name: Describe EC2 Instance
+        run: ./ec2_manager.sh describe ${{ secrets.TEST_INSTANCE_ID }}
+
+      - name: Stop EC2 Instance
+        run: ./ec2_manager.sh stop ${{ secrets.TEST_INSTANCE_ID }}
