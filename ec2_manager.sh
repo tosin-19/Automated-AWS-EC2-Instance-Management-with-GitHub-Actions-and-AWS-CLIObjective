@@ -13,7 +13,7 @@ set -euo pipefail
 # Function: Check AWS CLI configuration
 check_aws_config() {
   if ! aws sts get-caller-identity &>/dev/null; then
-    echo "❌ AWS CLI is not configured properly. Please run 'aws configure' or set environment variables."
+    echo " AWS CLI is not configured properly. Please run 'aws configure' or set environment variables."
     exit 1
   fi
 }
@@ -25,9 +25,9 @@ start_instance() {
   if aws ec2 start-instances --instance-ids "$instance_id" >/dev/null 2>&1; then
     aws ec2 describe-instances --instance-ids "$instance_id" \
       --query 'Reservations[0].Instances[0].State.Name' --output text
-    echo "✅ Instance $instance_id started successfully."
+    echo "Instance $instance_id started successfully."
   else
-    echo "❌ Failed to start instance $instance_id. Check instance ID or state."
+    echo "Failed to start instance $instance_id. Check instance ID or state."
   fi
 }
 
@@ -38,18 +38,18 @@ stop_instance() {
   if aws ec2 stop-instances --instance-ids "$instance_id" >/dev/null 2>&1; then
     aws ec2 describe-instances --instance-ids "$instance_id" \
       --query 'Reservations[0].Instances[0].State.Name' --output text
-    echo "✅ Instance $instance_id stopped successfully."
+    echo "Instance $instance_id stopped successfully."
   else
-    echo "❌ Failed to stop instance $instance_id. Check instance ID or state."
+    echo "Failed to stop instance $instance_id. Check instance ID or state."
   fi
 }
 
 # Function: Describe instance
 describe_instance() {
   local instance_id=$1
-  echo "ℹ️  Retrieving details for instance: $instance_id ..."
+  echo "Retrieving details for instance: $instance_id ..."
   if ! aws ec2 describe-instances --instance-ids "$instance_id" >/tmp/instance.json 2>/dev/null; then
-    echo "❌ Invalid instance ID: $instance_id"
+    echo "Invalid instance ID: $instance_id"
     return
   fi
   jq '.Reservations[0].Instances[0] | {InstanceId, InstanceType, State: .State.Name, PublicIp: .PublicIpAddress}' /tmp/instance.json
@@ -70,25 +70,25 @@ main_menu() {
     case $choice in
       1)
         read -rp "Enter Instance ID: " instance_id
-        [ -z "$instance_id" ] && echo "❌ Instance ID cannot be empty!" && continue
+        [ -z "$instance_id" ] && echo "Instance ID cannot be empty!" && continue
         start_instance "$instance_id"
         ;;
       2)
         read -rp "Enter Instance ID: " instance_id
-        [ -z "$instance_id" ] && echo "❌ Instance ID cannot be empty!" && continue
+        [ -z "$instance_id" ] && echo "Instance ID cannot be empty!" && continue
         stop_instance "$instance_id"
         ;;
       3)
         read -rp "Enter Instance ID: " instance_id
-        [ -z "$instance_id" ] && echo "❌ Instance ID cannot be empty!" && continue
+        [ -z "$instance_id" ] && echo "Instance ID cannot be empty!" && continue
         describe_instance "$instance_id"
         ;;
       4)
-        echo "👋 Exiting..."
+        echo "Exiting..."
         exit 0
         ;;
       *)
-        echo "❌ Invalid option. Please choose 1–4."
+        echo "Invalid option. Please choose 1–4."
         ;;
     esac
   done
