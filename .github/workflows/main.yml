@@ -35,3 +35,4 @@ jobs:
 
       - name: Stop EC2 Instance
         run: ./ec2_manager.sh stop ${{ secrets.TEST_INSTANCE_ID }}
+              EOF
